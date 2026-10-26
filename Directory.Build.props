@@ -1,0 +1,44 @@
+<Project>
+
+  <!--
+    Standalone build properties for the MiniProject solution.
+    This file stops MSBuild from inheriting the parent master-data Directory.Build.props,
+    so the MiniProject folder can be moved outside master-data without changes.
+  -->
+
+  <PropertyGroup>
+    <!-- Do not generate XML documentation files for each project. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+    <!-- Produce byte-identical outputs for identical inputs. -->
+    <Deterministic>true</Deterministic>
+
+    <!-- Enable CI-friendly build behavior when running under a CI system. -->
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+
+    <!-- Restore NuGet packages in parallel. -->
+    <RestorePackagesInParallel>true</RestorePackagesInParallel>
+
+    <!-- Build projects in parallel where possible. -->
+    <BuildInParallel>true</BuildInParallel>
+
+    <!-- Do not run code analyzers. -->
+    <RunAnalyzers>false</RunAnalyzers>
+
+    <!-- Do not run code analyzers during build. -->
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+  </PropertyGroup>
+
+  <!-- Release configuration: no debug symbols, optimized code. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <!-- Debug configuration: embedded debug information. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="MiniProject.Common/MiniProject.Common.csproj" />
+  <Project Path="MiniProject.DAL/MiniProject.DAL.csproj" />
+  <Project Path="MiniProject.Services/MiniProject.Services.csproj" />
+  <Project Path="MiniProject/MiniProject.csproj" />
+</Solution>
