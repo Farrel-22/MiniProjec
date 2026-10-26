@@ -13,6 +13,8 @@
     <None Include="wwwroot\branch\index.html" />
     <None Include="wwwroot\budget\form.html" />
     <None Include="wwwroot\budget\index.html" />
+    <None Include="wwwroot\kota\form.html" />
+    <None Include="wwwroot\kota\index.html" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,6 +25,14 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Controllers\Api\AuthApiController.cs" />
+    <Compile Remove="Controllers\Api\BranchApiController.cs" />
+    <Compile Remove="Controllers\Api\BudgetApiController.cs" />
+    <Compile Remove="Controllers\Api\RegionApiController.cs" />
+    <Compile Remove="Controllers\Api\SampleApiController.cs" />
   </ItemGroup>
 
   <ItemGroup>

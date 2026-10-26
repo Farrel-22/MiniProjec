@@ -1,10 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MiniProject.DAL.Context;
-using MiniProject.Services.Auth;
-using MiniProject.Services.Master;
-using MiniProject.Services.Transaction.Service;
+using MiniProject.DAL.ScaffoldContainer;
+using MiniProject.Services.Master.Interface.Kecamatan;
+using MiniProject.Services.Master.Interface.Kelurahan;
+using MiniProject.Services.Master.Interface.Kodepos;
+using MiniProject.Services.Master.Interface.Kota;
+using MiniProject.Services.Master.Service.Kecamatan;
+using MiniProject.Services.Master.Service.Kelurahan;
+using MiniProject.Services.Master.Service.Kodepos;
+using MiniProject.Services.Master.Service.Kota;
 
 namespace MiniProject.Services.Infrastructure;
 
@@ -13,14 +18,13 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddMiniProjectServices(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("MiniProjectConnection")
-            ?? throw new InvalidOperationException("Connection string 'MiniProjectConnection' not found.");
+            ?? "Server=localhost; Database=Latihan1; User ID=postgres; Password=Lazzuard;";
 
-        services.AddDbContext<MiniProjectDbContext>(o => o.UseNpgsql(connectionString));
-        services.AddScoped<ISampleService, SampleService>();
-        services.AddScoped<IRegionService, RegionService>();
-        services.AddScoped<IBranchService, BranchService>();
-        services.AddScoped<IBudgetService, BudgetService>();
-        services.AddScoped<IAuthService, AuthService>();
+        services.AddDbContext<Latihan1Context>(o => o.UseNpgsql(connectionString));
+        services.AddScoped<IKotaService, KotaService>();
+        services.AddScoped<IKecamatanService, KecamatanService>();
+        services.AddScoped<IKelurahanService, KelurahanService>();
+        services.AddScoped<IKodeposService, KodeposService>();
 
         return services;
     }

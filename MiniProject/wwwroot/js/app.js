@@ -72,6 +72,7 @@
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="/region/index.html">Region</a></li>
                         <li><a class="dropdown-item" href="/branch/index.html">Branch</a></li>
+                        <li><a class="dropdown-item" href="/kota/index.html">Kota</a></li>
                     </ul>
                 </li>
                 <li class="nav-item dropdown">

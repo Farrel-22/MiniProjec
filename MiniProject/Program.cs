@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
-using MiniProject.Services.Auth;
 using MiniProject.Services.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,18 +40,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
-
-using (var scope = app.Services.CreateScope())
-{
-    try
-    {
-        await scope.ServiceProvider.GetRequiredService<IAuthService>().EnsureDefaultUserAsync();
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogWarning(ex, "Default user seeding skipped. Make sure database tables exist.");
-    }
-}
 
 if (app.Environment.IsDevelopment())
 {
