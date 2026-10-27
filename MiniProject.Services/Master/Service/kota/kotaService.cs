@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using MiniProject.Common.ViewModel;
 using MiniProject.DAL.ScaffoldContainer;
 using MiniProject.Services.Master.Interface.Kota;
@@ -29,8 +29,31 @@ public class KotaService : IKotaService
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
+    public async Task<bool> ExistsByNameAsync(string nama, int? excludeId = null, CancellationToken cancellationToken = default)
+    {
+        var normalized = nama.Trim().ToLower();
+        var query = _context.MKota.AsNoTracking().Where(x => x.Nama.ToLower() == normalized);
+        if (excludeId.HasValue)
+        {
+            query = query.Where(x => x.Id != excludeId.Value);
+        }
+        return await query.AnyAsync(cancellationToken);
+    }
+
+    public async Task<bool> HasChildKecamatanAsync(int idKota, CancellationToken cancellationToken = default)
+    {
+        return await _context.MKecamatans
+            .AsNoTracking()
+            .AnyAsync(x => x.IdKota == idKota, cancellationToken);
+    }
+
     public async Task<MKota> CreateAsync(KotaFormViewModel model, string? user = null, CancellationToken cancellationToken = default)
     {
+        if (await ExistsByNameAsync(model.Nama, null, cancellationToken))
+        {
+            throw new InvalidOperationException($"Kota dengan nama '{model.Nama.Trim()}' sudah ada.");
+        }
+
         var entity = new MKota
         {
             Guid = Guid.NewGuid(),
@@ -59,6 +82,11 @@ public class KotaService : IKotaService
             return false;
         }
 
+        if (await ExistsByNameAsync(model.Nama, model.Id.Value, cancellationToken))
+        {
+            throw new InvalidOperationException($"Kota dengan nama '{model.Nama.Trim()}' sudah ada.");
+        }
+
         entity.Nama = model.Nama.Trim();
         entity.UpdatedBy = user ?? "System";
         entity.UpdatedDate = DateTime.UtcNow;
@@ -75,6 +103,11 @@ public class KotaService : IKotaService
         if (entity == null)
         {
             return false;
+        }
+
+        if (await HasChildKecamatanAsync(id, cancellationToken))
+        {
+            throw new InvalidOperationException("Kota tidak dapat dihapus karena masih memiliki data Kecamatan di bawahnya.");
         }
 
         _context.MKota.Remove(entity);

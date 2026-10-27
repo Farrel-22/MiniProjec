@@ -1,116 +1,132 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using MiniProject.Common.Entity.Transaction;
+﻿using Microsoft.AspNetCore.Mvc;
 using MiniProject.Common.ViewModel;
-using MiniProject.Services.Master;
-using MiniProject.Services.Transaction.Service;
+using MiniProject.DAL.ScaffoldContainer;
+using MiniProject.Services.Transaction.Interface;
 
 namespace MiniProject.Controllers.Api;
 
 [ApiController]
 [Route("api/budget")]
-[Authorize]
 public class BudgetApiController : ControllerBase
 {
     private readonly IBudgetService _budgetService;
-    private readonly IBranchService _branchService;
 
-    public BudgetApiController(IBudgetService budgetService, IBranchService branchService)
+    public BudgetApiController(IBudgetService budgetService)
     {
         _budgetService = budgetService;
-        _branchService = branchService;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    private static object ToDto(TrBudget x) => new
     {
-        var list = await _budgetService.GetAllAsync(cancellationToken);
+        x.Id,
+        x.Guid,
+        x.JudulTransaksi,
+        x.Description,
+        x.OpenBalance,
+        x.Addition,
+        x.Deduction,
+        x.Nominal,
+        x.IdKodepos,
+        Kodepos = x.IdKodeposNavigation?.Kodepos,
+        Kelurahan = x.IdKodeposNavigation?.IdKelurahanNavigation?.Nama,
+        Kecamatan = x.IdKodeposNavigation?.IdKelurahanNavigation?.IdKecamatanNavigation?.Nama,
+        Kota = x.IdKodeposNavigation?.IdKelurahanNavigation?.IdKecamatanNavigation?.IdKotaNavigation?.Nama,
+        x.CreatedBy,
+        x.CreatedDate,
+        x.UpdatedBy,
+        x.UpdatedDate
+    };
+
+    // GET: api/budget
+    [HttpGet]
+    public async Task<IActionResult> GetAll([FromQuery] int? idKodepos, CancellationToken cancellationToken)
+    {
+        var list = await _budgetService.GetAllAsync(idKodepos, cancellationToken);
         return Ok(list.Select(ToDto));
     }
 
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+    // GET: api/budget/total
+    [HttpGet("total")]
+    public async Task<IActionResult> GetTotal([FromQuery] int? idKodepos, CancellationToken cancellationToken)
     {
-        var e = await _budgetService.GetByIdAsync(id, cancellationToken);
-        if (e == null)
-        {
-            return NotFound(new { message = "Budget not found." });
-        }
-
-        return Ok(ToDto(e));
+        var total = await _budgetService.GetTotalBudgetAsync(idKodepos, cancellationToken);
+        return Ok(new { total });
     }
 
+    // GET: api/budget/{id}
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+    {
+        var entity = await _budgetService.GetByIdAsync(id, cancellationToken);
+        if (entity == null)
+        {
+            return NotFound(new { message = "Data transaksi budget tidak ditemukan." });
+        }
+
+        return Ok(ToDto(entity));
+    }
+
+    // POST: api/budget
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] BudgetFormViewModel model, CancellationToken cancellationToken)
     {
-        await ValidateBranchAsync(model, cancellationToken);
-
         if (!ModelState.IsValid)
         {
             return ValidationProblem(ModelState);
         }
 
-        await _budgetService.CreateAsync(model, User.Identity?.Name, cancellationToken);
-        return Ok(new { message = "Budget created." });
+        try
+        {
+            var entity = await _budgetService.CreateAsync(model, User.Identity?.Name, cancellationToken);
+            return Ok(new { message = "Transaksi budget berhasil ditambahkan.", data = ToDto(entity) });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
-    [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] BudgetFormViewModel model, CancellationToken cancellationToken)
+    // PUT: api/budget/{id}
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(int id, [FromBody] BudgetFormViewModel model, CancellationToken cancellationToken)
     {
-        model.Uid = id;
-        await ValidateBranchAsync(model, cancellationToken);
-
+        model.Id = id;
         if (!ModelState.IsValid)
         {
             return ValidationProblem(ModelState);
         }
 
-        var updated = await _budgetService.UpdateAsync(model, User.Identity?.Name, cancellationToken);
-        if (!updated)
+        try
         {
-            return NotFound(new { message = "Budget not found." });
-        }
-
-        return Ok(new { message = "Budget updated." });
-    }
-
-    [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
-    {
-        var deleted = await _budgetService.DeleteAsync(id, User.Identity?.Name, cancellationToken);
-        if (deleted)
-        {
-            return Ok(new { message = "Budget deleted." });
-        }
-
-        return NotFound(new { message = "Budget not found." });
-    }
-
-    private async Task ValidateBranchAsync(BudgetFormViewModel model, CancellationToken ct)
-    {
-        if (model.RefBranchId.HasValue)
-        {
-            var branch = await _branchService.GetByIdAsync(model.RefBranchId.Value, ct);
-            if (branch == null || (model.RefRegionId.HasValue && branch.RefRegionId != model.RefRegionId))
+            if (!await _budgetService.UpdateAsync(model, User.Identity?.Name, cancellationToken))
             {
-                ModelState.AddModelError(nameof(model.RefBranchId), "Selected branch is not valid for the selected region.");
+                return NotFound(new { message = "Data transaksi budget tidak ditemukan." });
             }
+
+            return Ok(new { message = "Transaksi budget berhasil diperbarui." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
     }
 
-    private static object ToDto(TBudget x) => new
+    // DELETE: api/budget/{id}
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        x.Uid,
-        RefRegionId = x.RefBranch?.RefRegionId,
-        RegionName = x.RefBranch?.RefRegion?.TxtName,
-        x.RefBranchId,
-        BranchName = x.RefBranch?.TxtName,
-        x.IntYear,
-        x.DecAmount,
-        x.TxtDescription
-    };
+        try
+        {
+            if (await _budgetService.DeleteAsync(id, cancellationToken))
+            {
+                return Ok(new { message = "Transaksi budget berhasil dihapus." });
+            }
+
+            return NotFound(new { message = "Data transaksi budget tidak ditemukan." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

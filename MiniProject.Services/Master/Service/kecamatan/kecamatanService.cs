@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using MiniProject.Common.ViewModel;
 using MiniProject.DAL.ScaffoldContainer;
 using MiniProject.Services.Master.Interface.Kecamatan;
@@ -29,6 +29,11 @@ public class KecamatanService : IKecamatanService
         return await query.OrderBy(x => x.Nama).ToListAsync(cancellationToken);
     }
 
+    public async Task<List<MKecamatan>> GetByKotaIdAsync(int idKota, CancellationToken cancellationToken = default)
+    {
+        return await GetAllAsync(idKota, cancellationToken);
+    }
+
     public async Task<MKecamatan?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return await _context.MKecamatans
@@ -37,8 +42,35 @@ public class KecamatanService : IKecamatanService
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
+    public async Task<bool> ExistsByNameAsync(string nama, int idKota, int? excludeId = null, CancellationToken cancellationToken = default)
+    {
+        var normalized = nama.Trim().ToLower();
+        var query = _context.MKecamatans
+            .AsNoTracking()
+            .Where(x => x.IdKota == idKota && x.Nama.ToLower() == normalized);
+
+        if (excludeId.HasValue)
+        {
+            query = query.Where(x => x.Id != excludeId.Value);
+        }
+
+        return await query.AnyAsync(cancellationToken);
+    }
+
+    public async Task<bool> HasChildKelurahanAsync(int idKecamatan, CancellationToken cancellationToken = default)
+    {
+        return await _context.MKelurahans
+            .AsNoTracking()
+            .AnyAsync(x => x.IdKecamatan == idKecamatan, cancellationToken);
+    }
+
     public async Task<MKecamatan> CreateAsync(KecamatanFormViewModel model, string? user = null, CancellationToken cancellationToken = default)
     {
+        if (await ExistsByNameAsync(model.Nama, model.IdKota, null, cancellationToken))
+        {
+            throw new InvalidOperationException($"Kecamatan dengan nama '{model.Nama.Trim()}' sudah ada di kota yang dipilih.");
+        }
+
         var entity = new MKecamatan
         {
             Guid = Guid.NewGuid(),
@@ -68,6 +100,11 @@ public class KecamatanService : IKecamatanService
             return false;
         }
 
+        if (await ExistsByNameAsync(model.Nama, model.IdKota, model.Id.Value, cancellationToken))
+        {
+            throw new InvalidOperationException($"Kecamatan dengan nama '{model.Nama.Trim()}' sudah ada di kota yang dipilih.");
+        }
+
         entity.Nama = model.Nama.Trim();
         entity.IdKota = model.IdKota;
         entity.UpdatedBy = user ?? "System";
@@ -85,6 +122,11 @@ public class KecamatanService : IKecamatanService
         if (entity == null)
         {
             return false;
+        }
+
+        if (await HasChildKelurahanAsync(id, cancellationToken))
+        {
+            throw new InvalidOperationException("Kecamatan tidak dapat dihapus karena masih memiliki data Kelurahan di bawahnya.");
         }
 
         _context.MKecamatans.Remove(entity);

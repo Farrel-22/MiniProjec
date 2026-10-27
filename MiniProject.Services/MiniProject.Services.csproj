@@ -24,7 +24,6 @@
 
   <ItemGroup>
     <Folder Include="Master\Service\" />
-    <Folder Include="Transaction\Inteface\" />
   </ItemGroup>
 
 </Project>

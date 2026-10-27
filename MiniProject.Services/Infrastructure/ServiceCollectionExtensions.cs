@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MiniProject.DAL.ScaffoldContainer;
@@ -10,6 +10,8 @@ using MiniProject.Services.Master.Service.Kecamatan;
 using MiniProject.Services.Master.Service.Kelurahan;
 using MiniProject.Services.Master.Service.Kodepos;
 using MiniProject.Services.Master.Service.Kota;
+using MiniProject.Services.Transaction.Interface;
+using MiniProject.Services.Transaction.Service;
 
 namespace MiniProject.Services.Infrastructure;
 
@@ -25,6 +27,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IKecamatanService, KecamatanService>();
         services.AddScoped<IKelurahanService, KelurahanService>();
         services.AddScoped<IKodeposService, KodeposService>();
+        services.AddScoped<IBudgetService, BudgetService>();
 
         return services;
     }

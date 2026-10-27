@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -30,7 +30,7 @@
   <ItemGroup>
     <Compile Remove="Controllers\Api\AuthApiController.cs" />
     <Compile Remove="Controllers\Api\BranchApiController.cs" />
-    <Compile Remove="Controllers\Api\BudgetApiController.cs" />
+    
     <Compile Remove="Controllers\Api\RegionApiController.cs" />
     <Compile Remove="Controllers\Api\SampleApiController.cs" />
   </ItemGroup>
@@ -45,3 +45,4 @@
   </ItemGroup>
 
 </Project>
+
